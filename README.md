@@ -1,4 +1,4 @@
-# **GoodDataProof: Replication of "Power Over Presence"**
+# **Replication Study of "Power Over Presence", Elizabeth Good (2024)**
 - *By Nina Rice & Erika Garza-Elorduy*
 
 ## **About This Project**
