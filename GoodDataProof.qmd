@@ -7,7 +7,7 @@ editor: visual
 
 # Power Over Presence: Women’s Representation in Comprehensive Peace Negotiations and Gender Provision Outcomes
 
-```{r}
+```{r, message=FALSE, warning=FALSE}
 
 # Load data
 repdata <- read.csv("PADD_Agreement Level.csv")
@@ -18,7 +18,7 @@ repdata <- read.csv("PADD_Agreement Level.csv")
 
 #### `GeWom` = a binary variable, taking the value of 1 if any of the peace agreement provisions are specifically addressing women, their inclusion, and their rights.
 
-```{r}
+```{r, message=FALSE, warning=FALSE}
 
 # Load libraries
 library(ggplot2)
@@ -42,7 +42,7 @@ ggplot(freq_data, aes(x = GeWom, y = Frequency, fill = GeWom)) +
 
 ### II. Correlation Matrix for Table 4. Percentage Measurement of Women Delegates (OLS Regression)
 
-```{r}
+```{r, message=FALSE, warning=FALSE}
 
 # Load libraries
 library(corrplot)
@@ -66,7 +66,7 @@ corrplot(cor_matrix, method = "color", type = "lower", diag = FALSE,  # Removes 
 
 ### III. Missingness Map for Entire Dataset (PADD_Agreement Level.csv)
 
-```{r}
+```{r, message=FALSE, warning=FALSE}
 library(naniar)
 vis_miss(repdata) + 
   theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 3))
