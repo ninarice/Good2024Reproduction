@@ -1,5 +1,5 @@
 # **GoodDataProof: Replication of "Power Over Presence"**
-📊 *By Nina Rice & Erika Garza-Elorduy*
+- *By Nina Rice & Erika Garza-Elorduy*
 
 ## **About This Project**
 This repository contains the replication files for:
