@@ -159,7 +159,7 @@ summary(pooled_interaction_results)
 
 ### Cross-Validation
 
-(Isn't working, we need to decide how to handle missingness)
+(Isn't working, we need to decide how to handle missingness. The author covers how pmm was run for all variables except DV and IVs)
 
 ```{r}
 
