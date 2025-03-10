@@ -137,26 +137,6 @@ summary(pooled_logit_results)
 ```
 
 
-#### Alternative Model #2: Interaction Effects 
-
-(Not significant, likely overfitting)
-
-```{r}
-
-# Run interaction model (pooled across all 5 imputed datasets)
-pooled_interaction <- with(imputed_data, glm(GeWom ~ FemSig_P * FemNeg_P + FemMed_P + FemOb_P, 
-                                             family = binomial))
-
-pooled_interaction_results <- pool(pooled_interaction)
-summary(pooled_interaction_results)
-```
-
-##### Visualization
-```{r}
-
-```
-
-
 ### Cross-Validation
 
 (Isn't working, we need to decide how to handle missingness. The author covers how pmm was run for all variables except DV and IVs)
