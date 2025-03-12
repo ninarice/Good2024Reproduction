@@ -1,0 +1,318 @@
+---
+title: "Working_Final_Code"
+format: html
+editor: visual
+---
+
+## Working_Final_Code
+
+### Loading data and libraries
+
+```{r}
+
+# Load libraries
+library(mice)
+library(naniar)
+library(tidyverse)
+library(broom) 
+library(stargazer)
+library(caret)
+library(ggplot2)
+library(logistf)
+
+# Load data
+repdata <- read.csv("PADD_Agreement Level.csv")
+
+# Count missing values for the dependent and independent variables
+missing_counts <- repdata %>%
+  summarise(
+    Missing_GeWom = sum(is.na(GeWom)),
+    Missing_FemSig_P = sum(is.na(FemSig_P)),
+    Missing_FemNeg_P = sum(is.na(FemNeg_P)),
+    Missing_FemMed_P = sum(is.na(FemMed_P)),
+    Missing_FemOb_P = sum(is.na(FemOb_P)),
+    Total_Missing_Rows = sum(!complete.cases(select(., GeWom, FemSig_P, FemNeg_P, FemMed_P, FemOb_P)))
+  )
+
+# Print results
+missing_counts # We have high missingness!
+
+```
+
+### Data Preparation and Cleaning (General)
+
+```{r}
+
+# Visualize missingness (before imputation)
+vis_miss(repdata) + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1, size = 3))
+
+```
+# Data Prep
+```{r}
+
+# Create and trim datasets for each model (removing rows with missing IVs and selecting only relevant columns)
+repdata_sig <- repdata %>% drop_na(GeWom, FemSig_P) %>% select(GeWom, FemSig_P)
+repdata_neg <- repdata %>% drop_na(GeWom, FemNeg_P) %>% select(GeWom, FemNeg_P)
+repdata_med <- repdata %>% drop_na(GeWom, FemMed_P) %>% select(GeWom, FemMed_P)
+repdata_ob  <- repdata %>% drop_na(GeWom, FemOb_P)  %>% select(GeWom, FemOb_P)
+
+sapply(list(repdata_sig, repdata_neg, repdata_med, repdata_ob), function(df) sum(is.na(df)))
+```
+
+
+### Original Paper
+
+#### OLS Regression Model's seen in Table 4:
+
+```{r, warning=FALSE}
+
+# Convert GeWom to numeric for OLS models
+repdata_sig$GeWom <- as.numeric(as.character(repdata_sig$GeWom))
+repdata_neg$GeWom <- as.numeric(as.character(repdata_neg$GeWom))
+repdata_med$GeWom <- as.numeric(as.character(repdata_med$GeWom))
+repdata_ob$GeWom <- as.numeric(as.character(repdata_ob$GeWom))
+
+# Define models
+ols1 <- lm(GeWom ~ FemSig_P, data = repdata_sig)  # Women Signatories
+ols2 <- lm(GeWom ~ FemNeg_P, data = repdata_neg)  # Women Negotiators
+ols3 <- lm(GeWom ~ FemMed_P, data = repdata_med)  # Women Mediators
+ols4 <- lm(GeWom ~ FemOb_P, data = repdata_ob)   # Women Observers
+
+# Generate regression table
+stargazer(ols1, ols2, ols3, ols4,
+          title = "Percentage Measurement of Women Delegates (OLS Regression)",
+          dep.var.labels = "Provisions for Women (GeWom)",
+          covariate.labels = c("Women Signatories", "Women Negotiators", "Women Mediators", "Women Observers"),
+          omit.stat = c("aic", "bic"),
+          add.lines = list(
+            c("Residual Std. Error", round(c(summary(ols1)$sigma, summary(ols2)$sigma, summary(ols3)$sigma, summary(ols4)$sigma), 3)),
+            c("F-statistic", round(c(summary(ols1)$fstatistic[1], summary(ols2)$fstatistic[1], summary(ols3)$fstatistic[1], summary(ols4)$fstatistic[1]), 3))
+          ),
+          star.cutoffs = c(0.1, 0.05, 0.01),
+          intercept.bottom = TRUE,
+          type = "text")
+
+# stargazer(ols1, ols2, ols3, ols4, type = "text", title = "OLS Models: Women Delegates & GeWom")
+
+```
+
+### Cross Validation for OLS
+```{r}
+
+# Set up 10-fold cross-validation
+ctrl <- trainControl(method = "cv", number = 10)
+
+# Cross-validation for OLS models
+cv_ols_sig <- train(GeWom ~ FemSig_P, data = repdata_sig, method = "lm", trControl = ctrl)
+cv_ols_neg <- train(GeWom ~ FemNeg_P, data = repdata_neg, method = "lm", trControl = ctrl)
+cv_ols_med <- train(GeWom ~ FemMed_P, data = repdata_med, method = "lm", trControl = ctrl)
+cv_ols_ob  <- train(GeWom ~ FemOb_P, data = repdata_ob, method = "lm", trControl = ctrl)
+
+# Print results
+print(cv_ols_sig)
+print(cv_ols_neg)
+print(cv_ols_med)
+print(cv_ols_ob)
+
+```
+
+```{r}
+table(repdata_sig$GeWom)  # Check before conversion
+table(repdata_neg$GeWom)
+table(repdata_med$GeWom)
+table(repdata_ob$GeWom)
+```
+
+
+### Replication
+
+##### Data Preparation for Alternative Models
+
+```{r}
+
+# # Convert GeWom to a factor for Firth Regression
+# repdata_sig$GeWom <- factor(repdata_sig$GeWom, levels = c(0, 1), labels = c("No", "Yes"))
+# repdata_neg$GeWom <- factor(repdata_neg$GeWom, levels = c(0, 1), labels = c("No", "Yes"))
+# repdata_med$GeWom <- factor(repdata_med$GeWom, levels = c(0, 1), labels = c("No", "Yes"))
+# repdata_ob$GeWom  <- factor(repdata_ob$GeWom, levels = c(0, 1), labels = c("No", "Yes"))
+# 
+# # Check levels
+# print(levels(repdata_sig$GeWom))
+# print(levels(repdata_neg$GeWom))
+# print(levels(repdata_med$GeWom))
+# print(levels(repdata_ob$GeWom))
+
+# Create and trim datasets for Firth regression (GeWom as factor)
+repdata_sig_firth <- repdata %>% 
+  drop_na(GeWom, FemSig_P) %>% 
+  select(GeWom, FemSig_P) %>% 
+  mutate(GeWom = factor(GeWom, levels = c(0, 1), labels = c("No", "Yes")))
+
+repdata_neg_firth <- repdata %>% 
+  drop_na(GeWom, FemNeg_P) %>% 
+  select(GeWom, FemNeg_P) %>% 
+  mutate(GeWom = factor(GeWom, levels = c(0, 1), labels = c("No", "Yes")))
+
+repdata_med_firth <- repdata %>% 
+  drop_na(GeWom, FemMed_P) %>% 
+  select(GeWom, FemMed_P) %>% 
+  mutate(GeWom = factor(GeWom, levels = c(0, 1), labels = c("No", "Yes")))
+
+repdata_ob_firth <- repdata %>% 
+  drop_na(GeWom, FemOb_P) %>% 
+  select(GeWom, FemOb_P) %>% 
+  mutate(GeWom = factor(GeWom, levels = c(0, 1), labels = c("No", "Yes")))
+
+# Check that both levels exist in each dataset
+print(table(repdata_sig_firth$GeWom))  
+print(table(repdata_neg_firth$GeWom))  
+print(table(repdata_med_firth$GeWom))  
+print(table(repdata_ob_firth$GeWom))  
+
+```
+
+#### Alternative Models: Firth Regression
+
+```{r}
+
+# Define firth regression models
+firth1 <- logistf(GeWom ~ FemSig_P, data = repdata_sig_firth)
+firth2 <- logistf(GeWom ~ FemNeg_P, data = repdata_neg_firth)
+firth3 <- logistf(GeWom ~ FemMed_P, data = repdata_med_firth)
+firth4 <- logistf(GeWom ~ FemOb_P, data = repdata_ob_firth)
+
+# Print summaries
+summary(firth1)
+summary(firth2)
+summary(firth3)
+summary(firth4)
+
+```
+
+### Cross-Validation
+```{r}
+
+# We define a custom function for Firth Regression in caret
+logistf_model <- list(
+  type = "Classification",
+  library = "logistf",
+  loop = NULL,
+  parameters = data.frame(parameter = "penalty", class = "numeric", label = "Penalty Term"),
+  fit = function(x, y, ...) {
+    data <- as.data.frame(cbind(y, x))
+    logistf(y ~ ., data = data, ...)
+  },
+  predict = function(modelFit, newdata, ...) {
+    predict(modelFit, newdata, type = "response")
+  },
+  prob = function(modelFit, newdata, ...) {
+    predict(modelFit, newdata, type = "prob")
+  },
+  grid = function(x, y, len = NULL, search = "grid") {
+    expand.grid(penalty = 1)  # Fake parameter grid to satisfy caret
+  }
+)
+
+```
+
+```{r}
+
+# Function for LOOCV manually
+loocv_firth <- function(data, formula) {
+  n <- nrow(data)
+  errors <- numeric(n)
+  
+  for (i in 1:n) {
+    # Leave one observation out
+    train_data <- data[-i, ]
+    test_data  <- data[i, , drop = FALSE]
+    
+    # Fit Firth logistic regression
+    fit <- logistf(formula, data = train_data)
+    
+    # Predict probability on the left-out observation
+    pred_prob <- predict(fit, newdata = test_data, type = "response")
+    
+    # Convert probability to class (threshold = 0.5)
+    pred_class <- ifelse(pred_prob > 0.5, 1, 0)
+    
+    # Store error (1 if misclassified, 0 otherwise)
+    errors[i] <- ifelse(pred_class == test_data$GeWom, 0, 1)
+  }
+  
+  # Compute error rate
+  mean(errors)
+}
+
+# Run LOOCV for each model
+error_firth1 <- loocv_firth(repdata_sig_firth, GeWom ~ FemSig_P)
+error_firth2 <- loocv_firth(repdata_neg_firth, GeWom ~ FemNeg_P)
+error_firth3 <- loocv_firth(repdata_med_firth, GeWom ~ FemMed_P)
+error_firth4 <- loocv_firth(repdata_ob_firth, GeWom ~ FemOb_P)
+
+# Print error rates
+print(error_firth1)
+print(error_firth2)
+print(error_firth3)
+print(error_firth4)
+
+```
+
+
+```{r}
+
+# Define 10-fold cross-validation
+ctrl <- trainControl(method = "cv", number = 10, classProbs = TRUE)
+
+# Run cross-validation on the Firth models
+cv_firth1 <- train(GeWom ~ FemSig_P, data = repdata_sig_firth, method = logistf_model, tuneGrid = logistf_model$grid(), trControl = ctrl)
+cv_firth2 <- train(GeWom ~ FemNeg_P, data = repdata_neg_firth, method = logistf_model, tuneGrid = logistf_model$grid(), trControl = ctrl)
+cv_firth3 <- train(GeWom ~ FemMed_P, data = repdata_med_firth, method = logistf_model, tuneGrid = logistf_model$grid(), trControl = ctrl)
+cv_firth4 <- train(GeWom ~ FemOb_P, data = repdata_ob_firth, method = logistf_model, tuneGrid = logistf_model$grid(), trControl = ctrl)
+
+# Print Results
+print(cv_firth1)
+print(cv_firth2)
+print(cv_firth3)
+print(cv_firth4)
+
+```
+
+
+
+```{r}
+# 
+# # Set up 10-fold cross-validation
+# ctrl <- trainControl(method = "cv", number = 10, classProbs = TRUE, summaryFunction = twoClassSummary)
+# 
+# # Cross-validation for Logit models (now should work)
+# cv_logit1 <- train(GeWom ~ FemSig_P, data = repdata_sig, method = "glm", family = binomial, trControl = ctrl)
+# cv_logit2 <- train(GeWom ~ FemNeg_P, data = repdata_neg, method = "glm", family = binomial, trControl = ctrl)
+# cv_logit3 <- train(GeWom ~ FemMed_P, data = repdata_med, method = "glm", family = binomial, trControl = ctrl)
+# cv_logit4 <- train(GeWom ~ FemOb_P, data = repdata_ob, method = "glm", family = binomial, trControl = ctrl)
+# 
+# # Print results
+# print(cv_logit1)
+# print(cv_logit2)
+# print(cv_logit3)
+# print(cv_logit4)
+```
+
+
+#### Alternative Model: Combined Logistic Regression
+
+```{r}
+
+# # Run logistic regression (pooled across all 5 imputed datasets)
+# pooled_logit <- with(imputed_data, glm(GeWom ~ FemSig_P + FemNeg_P + FemMed_P + FemOb_P, 
+#                                        family = binomial))
+# 
+# pooled_logit_results <- pool(pooled_logit)
+# summary(pooled_logit_results)
+
+```
+
+### Evaluating Models
+
+
