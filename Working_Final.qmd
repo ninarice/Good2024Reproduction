@@ -14,7 +14,7 @@ csl: apsa.csl
 # **1. Introduction**
 
 -   Summarize key information about the authors’ analysis for someone who has not read their paper.
-    -   Elizabeth Good’s analysis uses a dataset of 2,299 Track 1 delegates from 116 comprehensive peace agreements (1990–2021) to examine how women’s involvement influences gender provisions in peace negotiations. She categorizes delegates by role (e.g., signatory, negotiator, observer) and measures their impact using a binary text-as-data approach to detect mentions of women or gender-based issues in agreements. Her findings show that women’s presence alone does not guarantee substantive representation—only women in positions of power (such as signatories) significantly increase the likelihood of gender provisions. She controls for factors like conflict-related sexual violence, international involvement, and national gender equality to isolate the effect of women’s roles. The study challenges traditional “critical mass” theories and emphasizes the importance of power over mere presence in advancing gender equality in peace processes.
+    -   Elizabeth Good’s analysis in her paper *Power Over Presence: Women’s Representation in Comprehensive Peace Negotiations and Gender Provision Outcomes* investigates how women’s participation in comprehensive peace negotiations influences the inclusion of gender provisions in peace agreements. Using data from 116 peace agreements finalized between 1990 and 2021 and 2,299 Track 1 delegates, she categorizes women's roles as signatories, negotiators, mediators, or observers and examines their impact using a binary text-as-data approach to detect mentions of women or gender-based issues in agreements. Her findings challenge the assumption that simply increasing the number of women in peace negotiations leads to better gender outcomes. Instead, only women in positions of power, such as signatories, significantly increase the likelihood of gender provisions being included. The study controls for factors like conflict-related sexual violence, international involvement, and national gender equality to isolate the effect of women's roles, ultimately reinforcing the argument that power matters more than mere presence in shaping gender-responsive peace agreements.
 -   Describe what additional model or models you want to consider and why.
 -   Evaluate which of the models you consider performs better on an out-of-sample predictive basis. I.e., you will use cross-validation to compare your models.
 -   Interpret the relationship between an independent variable and the dependent variable in the best-fitting model you found. Be sure to specify your quantity of interest.
@@ -25,31 +25,54 @@ csl: apsa.csl
 ## **2.1. Unit of Analysis and Sampling**
 
 -   What is the unit of analysis? I.e., what are the cases in the dataset?
-    -   The unit of analysis in the study is comprehensive peace agreements, specifically the 116 agreements finalized between 1990 and 2021. Each agreement serves as a case, and the study examines the delegates involved in these negotiations. The dataset, *Peace Agreement Delegate Dataset (PADD)*, includes 2,299 Track 1 delegates who participated in these agreements, with a focus on their roles (e.g., signatories, negotiators, observers) and whether agreements included provisions for women.
+    -   The unit of analysis in this study is comprehensive peace agreements, specifically the 116 agreements finalized between 1990 and 2021. Each agreement is treated as a single case, meaning the analysis is conducted at the agreement level rather than at the level of individual delegates. However, because the study examines how women’s involvement influences the inclusion of gender provisions, it also considers the composition of delegates within each agreement. The dataset, the Peace Agreement Delegate Dataset (PADD), includes information on 2,299 Track 1 delegates, categorizing them by role (e.g., signatory, negotiator, mediator, observer) and linking them to their respective agreements. The study assesses whether agreements with women in key roles are more likely to include gender provisions, using agreement-level data to identify broader patterns.
 -   Do you have any concerns about observational independence?
-    -   Regarding observational independence, there are potential concerns since peace agreements are not entirely independent events—many agreements stem from the same conflict or negotiation process and may be influenced by previous agreements or ongoing diplomatic efforts. Additionally, the same delegates may appear in multiple agreements, potentially leading to non-independent observations.
+    -   There are valid concerns about observational independence due to the nature of peace agreements. Many agreements in the dataset are part of broader peace processes, meaning that successive agreements may be influenced by earlier negotiations within the same conflict. This creates potential dependencies between observations, as agreements from the same conflict may share similar characteristics, actors, or external pressures. Additionally, individual delegates may participate in multiple agreements, leading to non-independence across cases where the same key negotiators shape different agreements. This clustering effect could result in correlated observations, requiring statistical adjustments such as robust standard errors or multilevel modeling to account for within-conflict dependencies.
 -   How were the data sampled (an internet survey? All available cases? something else?)
-    -   The data were not sampled randomly but rather drawn from all available cases of comprehensive peace agreements, using sources such as the PA-X Peace Agreement Database, the UN Peacemaker Database, and original agreement texts. The study ensures completeness by coding all Track 1 delegates mentioned in these agreements, using name-based gender identification and manual verification where necessary.
+    -   The data were obtained from a comprehensive set of sources rather than through random sampling. The study includes all available comprehensive peace agreements from 1990 to 2021, ensuring that the dataset represents the full population of relevant cases rather than a subset. Agreements were identified and coded using sources such as the PA-X Peace Agreement Database, the UN Peacemaker Database, and direct analysis of agreement texts. The study codes all Track 1 delegates mentioned in these agreements, using name-based gender identification techniques supplemented by manual verification to ensure accuracy. This process involves drawing on databases and algorithms that associate names with gender, as well as cross-checking biographical information from official records, media sources, and expert knowledge to reduce misclassification errors. While this approach allows for a comprehensive assessment of women’s participation in peace processes, it also means that the dataset reflects the documentation and availability of agreements rather than a probabilistic sample.
 
 ## **2.2. Dependent Variable (`GeWom`)**
 
 -   What is the dependent variable for the model you are replicating?
-    -   The dependent variable for the model being replicated is GeWom, which indicates whether a comprehensive peace agreement includes provisions for women. It is a binary variable coded as:
 
-        -   0 = The agreement does *not* contain provisions for women.
+    -   The dependent variable for the model being replicated is GeWom, which indicates whether a comprehensive peace agreement includes provisions specifically addressing women. It is a binary variable coded as:
 
-        -   1 = The agreement *does* contain provisions for women.
+        -   **0** = The agreement does not contain provisions for women.
 
-        This variable is used to measure women’s substantive representation in peace agreements by detecting explicit mentions of *women, girls, widows, mothers, gender-based violence, or sexual violence* in the agreement text.
+        -   **1** = The agreement does contain provisions for women.
+
+        This variable serves as a measure of women’s substantive representation in peace agreements by identifying explicit references to women, girls, widows, mothers, gender-based violence, or sexual violence within the agreement text. By coding the presence or absence of such provisions, the variable captures the extent to which women’s issues are formally included in peace processes.
+
 -   How many observations are there?
-    -   The dataset originally contains 116 observations, representing 116 comprehensive peace agreements finalized between 1990 and 2021. The exclusion of cases with missing delegate data reduces the final sample to 108 agreements for analysis.
+
+    -   The dataset originally consists of 116 observations, corresponding to 116 comprehensive peace agreements finalized between 1990 and 2021. However, due to missing delegate data in some cases, the final analytical sample is reduced to 108 agreements. This adjustment ensures that only agreements with complete delegate information are included in the analysis, maintaining data integrity while slightly reducing the overall sample size.
+
 -   Describe the DV. Include a plot of the distribution of the DV and highlight any important qualities (binary? categorical? truncated in some way? Rare? Bimodal? etc.)
+
+    ```{r}
+    # Calculate frequencies as a percentage of the total
+    table_freq <- prop.table(table(repdata$GeWom)) * 100
+
+
+    freq_data <- as.data.frame(table_freq)
+    names(freq_data) <- c("GeWom", "Frequency")
+
+
+    ggplot(freq_data, aes(x = GeWom, y = Frequency, fill = GeWom)) +
+      geom_bar(stat = "identity", width = 0.7) +  
+      labs(x = "Provisions for Women", y = "Frequency (%)", title = "Histogram of Provisions for Women") +
+      scale_x_discrete(limits = c("0", "1"), labels = c("0" = "No Provisions", "1" = "Provisions")) +
+      theme_minimal() +
+      theme(axis.title = element_text(size = 12, face = "bold"),
+            axis.text = element_text(size = 10),
+            plot.title = element_text(size = 14, face = "bold", hjust = 0.5))
+    ```
 
 ## **2.3. Missing Data & Handling Strategy**
 
 -   How did the authors handle missing data?
 
-    -   The author implemented predictive mean matching (pmm) for missing values to ensure that imputed values followed the distribution of observed data. Five imputed datasets were created to account for uncertainty in missing data estimation. Certain variables, such as the dependent variable (GeWom) and the main independent variable (women delegates in negotiations), were excluded from imputation to avoid artificially inflating relationships. Variables with excessive missingness (e.g., perception-based measures of women’s roles) were excluded from regression models rather than imputed.
+    -   The author addressed missing data through multiple imputation using the mice package in R, generating five imputed datasets to account for missing values in their main analyses. However, for the four OLS models in Table 4 that we chose to replicate, they did not use imputed data. Instead, these models were run on the original dataset without imputation, meaning that any agreements with missing data in the relevant variables were excluded through casewise deletion. This approach suggests that the results for Table 4 are based only on the subset of agreements with complete data for the included variables, rather than leveraging the full dataset through imputation.
 
 -   Provide a **missingness map**.
 
@@ -62,8 +85,11 @@ csl: apsa.csl
 ## **2.4. Original Model**
 
 -   What kind of model are you replicating (logit? probit? negative binomial? etc.)?
+    -   The models we are replicating are Ordinary Least Squares (OLS) regressions, specifically four separate models shown in Table 4 of the original paper, analyzing the relationship between different categories of women delegates—signatories, negotiators, mediators, and observers—and the inclusion of gender provisions in comprehensive peace agreements. These models estimate the linear relationship between the percentage of women in each role and the likelihood of gender-related content being included in the agreements.
 -   What do the original authors hope to achieve with the statistical model(s) you focus on? (description? prediction? causal inference?)
+    -   The original authors aim to achieve causal inference rather than simple description or prediction. Their goal is to determine whether the presence of women in peace negotiations influences substantive outcomes, particularly the inclusion of gender provisions. They challenge the idea that women’s mere presence leads to representation, arguing instead that only women in high-power roles (e.g., signatories) significantly impact the negotiation outcomes.
 -   Replicate the **original model** and show results: Demonstrate that you successfully replicated the authors’ original model. This means you will include a regression table in your paper in which the coefficient estimates, standard errors, and the number of observations are exactly the same as in the original paper.
+    -   We successfully replicated the four OLS models from Table 4 using the non-imputed dataset, ensuring that the coefficient estimates, standard errors, and number of observations match those in the original paper. This confirms that our replication correctly implements the original methodology and dataset, validating the findings that women’s representation in negotiations must be accompanied by decision-making authority to influence outcomes.
 
 # **3. Replication Results**
 
@@ -72,7 +98,9 @@ csl: apsa.csl
 # **4. Alternative Model**
 
 -   State the additional model(s) you are considering. The additional model(s) must be fit to the same dependent variable.
+    -   The additional models we implemented were logistic regression models, specifically generalized linear models (GLM) with a binomial family. We ran four separate logistic regression models, each corresponding to one of the original OLS models. These models included the same independent variables: the percentage of women signatories, negotiators, mediators, and observers. Unlike OLS regression, which treats the presence of gender provisions as a continuous outcome, these models estimate the probability of a peace agreement including gender provisions. By using a logistic framework, we can better capture the binary nature of the dependent variable and assess the likelihood of gender provisions being included in a given agreement.
 -   Explain why you chose the model(s) you did.
+    -   We chose logistic regression because the dependent variable, GeWom, is binary, indicating whether a peace agreement includes gender provisions or not. OLS regression is not ideal for binary outcomes as it can produce predictions outside the 0-1 range and violates assumptions of normality and homoscedasticity. A logit model is better suited for this type of analysis because it models the probability of the outcome occurring and provides interpretable odds ratios.
 -   Fit at least one alternative model to the same DV.
 -   Provide a regression table that reports the results from this new model(s).
 -   Compare coefficients and goodness-of-fit metrics.
