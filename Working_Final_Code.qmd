@@ -73,7 +73,7 @@ sapply(list(repdata_sig, repdata_neg, repdata_med, repdata_ob), function(df) sum
 
 ```
 
-### OLS Regression Models as seen in Table 4:
+### Replication of OLS Regression Models as seen in Table 4:
 
 ```{r, warning=FALSE}
 
@@ -155,7 +155,7 @@ print(cv_ols_sig)
 
 ```
 
-## Replication
+## Alt models
 
 ##### Data Preparation
 
@@ -340,13 +340,13 @@ bar_chart_data <- repdata %>%
 # Plot
 ggplot(bar_chart_data, aes(x = YearGroup, y = Prop_GeWom)) +
   geom_col(fill = "steelblue", alpha = 0.8) +
-  geom_text(aes(label = round(Prop_GeWom, 2)), vjust = -0.5, size = 4) +
+  geom_text(aes(label = round(Prop_GeWom, 2)), vjust = -0.1, size = 4) +
   labs(title = "Proportion of Peace Agreements with Women's Provisions (10-Year Intervals)",
        x = "10-Year Period",
        y = "Proportion of Agreements with Women's Provisions") +
   theme_minimal() +
   theme(axis.text.x = element_text(angle = 45, hjust = 1))
-
+ggsave(filename = )
 ```
 
 ### Model 2: GeWom \~ FemSig_P + Con (Country-Based Analysis)
