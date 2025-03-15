@@ -127,4 +127,8 @@ Overall, while our replication confirms the core argument that women in position
 
 ## **7. References**
 
-Good, Elizabeth. 2024. “Women’s Roles in Peace Negotiations and Gender Provisions.” *International Studies Quarterly*68(2): 215–30.
+Good, Elizabeth. 2024. “Women’s Roles in Peace Negotiations and Gender Provisions.” *International Studies Quarterly*68(2): 215–30.\
+
+**AI Disclosure statement**
+
+We used ChatGPT 4o in this project to help with R code and statistical interpretation. Doing so saved us time with troubleshooting errors, syntactical assistance, and pulling our various model results together. We found this to be beneficial for completing the project on a brief timeline.
