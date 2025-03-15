@@ -224,7 +224,7 @@ firth4_tex <- convert_firth(firth4)
 screenreg(list(firth1_tex, firth2_tex, firth3_tex, firth4_tex),
           custom.model.names = c("(1)", "(2)", "(3)", "(4)"),
           custom.coef.names = c("Intercept", "Women Signatories", "Women Negotiators", "Women Mediators", "Women Observers"),
-          custom.header = list("Provisions for Women (GeWom)" = 1:4),
+          custom.header = list("Firth's Regression on GeWom" = 1:4),
           stars = c(0.1, 0.05, 0.01),
           digits = 3)
 
